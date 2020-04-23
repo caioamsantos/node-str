@@ -48,9 +48,9 @@ exports.getByTag = async (req, res, next) => {
 exports.post = async (req, res, next) => {
 
     let contract = new ValidationContract();
-    contract.hasMinLen(req.body.title, 3, 'O parâmetro title deve conter no mínimo 3 caracteres');
-    contract.hasMinLen(req.body.slug, 3, 'O  parâmetro slug deve conter no mínimo 3 caracteres');
-    contract.hasMinLen(req.body.description, 3, 'O parâmetro description deve conter no mínimo 3 caracteres');
+    contract.hasMinLen(req.body.title, 3, 'O título deve conter no mínimo 3 caracteres');
+    contract.hasMinLen(req.body.slug, 3, 'O slug deve conter no mínimo 3 caracteres');
+    contract.hasMinLen(req.body.description, 3,'A descrição deve conter no mínimo 3 caracteres');
 
     if (!contract.isValid()) {
         res.status(400).send(contract.errors()).end();
