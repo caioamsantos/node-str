@@ -1,12 +1,14 @@
 'use strict';
 
 const express = require('express');
+const authService = require('../services/auth-service');
+
 const router = express.Router();
 
 const controller = require('../controllers/customer-controller');
 
-router.get('/:id', controller.getById);
 router.post('/', controller.post);
-router.delete('/:id', controller.delete);
+router.post('/auth', controller.auth);
+router.post('/refresh-token', authService.authorize , controller.refreshToken);
 
 module.exports = router;
