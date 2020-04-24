@@ -1,25 +1,83 @@
 'use strict';
 
+const md5 = require('md5');
 const mongoose = require('mongoose');
+const emailService = require('../services/email-service');
+const authService = require('../services/auth-service');
+
 const Customer = mongoose.model('Customer');
 const ValidationContract = require('../validators/fluent-validator');
 const repository = require('../repositories/customer-respository');
+const config = require('../config');
 
-exports.get = async (req, res, next) => {
+
+exports.auth = async (req, res, next) => {
     try {
-        const data = await repository.get();
-        res.status(200).send(data);
+        const user = {
+            email: req.body.email,
+            password: md5(req.body.password + global.SALT_KEY)
+        };
+
+        const customer = await repository.authenticate(user);
+
+        if (!customer) {
+            res.status(404).send({
+                message: 'Usuário ou senha inválidos',
+            });
+
+            return;
+        }
+        const token = await authService.generate({
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            roles: customer.roles
+        });
+
+        res.status(200).send({
+            token: token,
+            data: {
+                email: customer.email,
+                name: customer.name
+            }
+        });
     } catch (error) {
         onError(res, error);
-
     }
+
 }
 
-exports.getById = async (req, res, next) => {
+exports.refreshToken = async (req, res, next) => {
+
+    const token = req.body.token || req.query.token || req.headers['x-access-token'];
+    const data = await authService.decode(token);
+
     try {
-        const id = req.params.id;
-        const data = await repository.getById(id);
-        res.status(200).send(data);
+
+        const customer = await repository.getById(data.id);
+
+        if (!customer) {
+            res.status(404).send({
+                message: 'Cliente não encontrado',
+            });
+
+            return;
+        }
+
+        const tokenData = await authService.generate({
+            id: customer.id,
+            email: customer.email,
+            name: customer.name,
+            roles: customer.roles
+        });
+
+        res.status(200).send({
+            token: tokenData,
+            data: {
+                email: customer.email,
+                name: customer.name
+            }
+        });
     } catch (error) {
         onError(res, error);
     }
@@ -39,34 +97,24 @@ exports.post = async (req, res, next) => {
     }
 
     try {
-        const body = req.body;
-        await repository.create(body);
+        const user = {
+            name: req.body.name,
+            email: req.body.email,
+            password: md5(req.body.password + global.SALT_KEY),
+            roles: ['user']
+        };
+
+        await repository.create(user);
+
+        emailService.send(
+            user.email,
+            'Bem-vindo ao NodeStore',
+            global.EMAIL_TMPL.replace('{0}', user.name)
+        );
+
         res.status(201).send({
             message: 'Cliente cadastrado com sucesso'
         });
-    } catch (error) {
-        onError(res, error);
-    }
-};
-
-exports.put = async (req, res, next) => {
-
-    try {
-        const id = req.params.id;
-        const body = req.body;
-        await repository.update(id, body);
-        res.status(200).send({ message: 'Cliente atualizado com sucesso' });
-
-    } catch (error) {
-        onError(res, error);
-    }
-};
-
-exports.delete = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        await repository.delete(id);
-        res.status(200).send({ message: 'Client excluído com sucesso' });
     } catch (error) {
         onError(res, error);
     }
