@@ -2,9 +2,11 @@
 
 const mongoose = require('mongoose');
 const guid = require('guid');
+const authService = require('../services/auth-service');
+const repository = require('../repositories/order-respository');
+
 const Order = mongoose.model('Order');
 const ValidationContract = require('../validators/fluent-validator');
-const repository = require('../repositories/order-respository');
 
 exports.get = async (req, res, next) => {
     try {
@@ -26,11 +28,15 @@ exports.getById = async (req, res, next) => {
 }
 
 exports.post = async (req, res, next) => {
-    let body = req.body;
-    body.number = guid.raw().substring(0,6);
+    const token = req.body.token || req.query.token || req.headers['x-access-token'];
+    const data = await authService.decode(token);
 
     try {
-        await repository.create(body);
+        await repository.create({
+            customer: data.id,
+            number: guid.raw().substring(0, 6),
+            items: req.body.items
+        });
         res.status(201).send({
             message: 'Pedido cadastrado com sucesso'
         });
