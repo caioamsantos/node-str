@@ -41,7 +41,7 @@ ValidationContract.prototype.clear = () => {
 }
 
 ValidationContract.prototype.isValid = () => {
-    return errors.length == 0;
+    return errors.length === 0;
 }
 
 module.exports = ValidationContract;
