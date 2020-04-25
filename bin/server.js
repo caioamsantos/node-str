@@ -7,6 +7,8 @@ const debug = require('debug')('nodestr:server');
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+const helmet = require('helmet');
+app.use(helmet())
 
 const server = https.createServer(app);
 
