@@ -3,11 +3,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const helmet = require('helmet');
 
 const config = require('./config');
 const app = express();
 app.disable('x-powered-by')
 
+app.use(helmet())
 
 mongoose.connect(config.connectionString, { useNewUrlParser: true });
 app.use(bodyParser.json());
